@@ -1,0 +1,328 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Clock PWA</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#080c14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WorldClock">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2088/2088617.png">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', 'Prompt', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #080c14;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 45%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 45%);
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2.5rem 1.25rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ปุ่มติดตั้ง PWA */
+    .install-btn {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 100px;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      color: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+      transition: all 0.3s ease;
+    }
+
+    .install-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+    }
+
+    .search-container {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 2.5rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 1rem 1.4rem;
+      font-size: 0.95rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: #f8fafc;
+      outline: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      transition: all 0.3s ease;
+    }
+
+    .search-input::placeholder { color: #475569; }
+
+    .search-input:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(15, 23, 42, 0.85);
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+    }
+
+    .clock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .clock-card {
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 1.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .clock-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+
+    .clock-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 30px rgba(99, 102, 241, 0.15);
+    }
+
+    .city-name { font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
+    .country-name { font-size: 0.85rem; color: #64748b; font-weight: 500; margin-bottom: 1.25rem; }
+    
+    .time-display {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date-display { font-size: 0.875rem; color: #94a3b8; font-weight: 500; margin-top: 0.35rem; }
+
+    .timezone-tag {
+      display: inline-flex;
+      padding: 0.35rem 0.8rem;
+      border-radius: 100px;
+      font-size: 0.725rem;
+      font-weight: 600;
+      margin-top: 1.25rem;
+      background: rgba(99, 102, 241, 0.1);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .no-result {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #64748b;
+      padding: 4rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>World Clock Dashboard</h1>
+    <p class="subtitle">ระบบติดตามเวลา 48 เมืองหลักทั่วโลก</p>
+    <button id="installBtn" class="install-btn">📲 ติดตั้งแอปไว้บนเครื่อง</button>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหาชื่อเมือง หรือประเทศ..." />
+  </div>
+
+  <div class="clock-grid" id="clockGrid"></div>
+
+  <script>
+    const locations = [
+      { city: 'กรุงเทพฯ', country: 'ประเทศไทย', timezone: 'Asia/Bangkok' },
+      { city: 'โตเกียว', country: 'ญี่ปุ่น', timezone: 'Asia/Tokyo' },
+      { city: 'ปักกิ่ง', country: 'จีน', timezone: 'Asia/Shanghai' },
+      { city: 'โซล', country: 'เกาหลีใต้', timezone: 'Asia/Seoul' },
+      { city: 'สิงคโปร์', country: 'สิงคโปร์', timezone: 'Asia/Singapore' },
+      { city: 'ฮานอย', country: 'เวียดนาม', timezone: 'Asia/Ho_Chi_Minh' },
+      { city: 'จาการ์ตา', country: 'อินโดนีเซีย', timezone: 'Asia/Jakarta' },
+      { city: 'กัวลาลัมเปอร์', country: 'มาเลเซีย', timezone: 'Asia/Kuala_Lumpur' },
+      { city: 'มะนิลา', country: 'ฟิลิปปินส์', timezone: 'Asia/Manila' },
+      { city: 'ย่างกุ้ง', country: 'เมียนมา', timezone: 'Asia/Yangon' },
+      { city: 'พนมเปญ', country: 'กัมพูชา', timezone: 'Asia/Phnom_Penh' },
+      { city: 'เวียงจันทน์', country: 'ลาว', timezone: 'Asia/Vientiane' },
+      { city: 'ไทเป', country: 'ไต้หวัน', timezone: 'Asia/Taipei' },
+      { city: 'ฮ่องกง', country: 'ฮ่องกง', timezone: 'Asia/Hong_Kong' },
+      { city: 'นิวเดลี', country: 'อินเดีย', timezone: 'Asia/Kolkata' },
+      { city: 'ดูไบ', country: 'สหรัฐอาหรับเอมิเรตส์', timezone: 'Asia/Dubai' },
+      { city: 'ริยาด', country: 'ซาอุดีอาระเบีย', timezone: 'Asia/Riyadh' },
+      { city: 'อิสตันบูล', country: 'ตุรกี', timezone: 'Europe/Istanbul' },
+      { city: 'ไคโร', country: 'อียิปต์', timezone: 'Africa/Cairo' },
+      { city: 'โยฮันเนสเบิร์ก', country: 'แอฟริกาใต้', timezone: 'Africa/Johannesburg' },
+      { city: 'คาซาบลังกา', country: 'โมร็อกโก', timezone: 'Africa/Casablanca' },
+      { city: 'ไนโรบี', country: 'เคนยา', timezone: 'Africa/Nairobi' },
+      { city: 'ลอนดอน', country: 'สหราชอาณาจักร', timezone: 'Europe/London' },
+      { city: 'ปารีส', country: 'ฝรั่งเศส', timezone: 'Europe/Paris' },
+      { city: 'เบอร์ลิน', country: 'เยอรมนี', timezone: 'Europe/Berlin' },
+      { city: 'โรม', country: 'อิตาลี', timezone: 'Europe/Rome' },
+      { city: 'มาดริด', country: 'สเปน', timezone: 'Europe/Madrid' },
+      { city: 'อัมสเตอร์ดัม', country: 'เนเธอร์แลนด์', timezone: 'Europe/Amsterdam' },
+      { city: 'ซูริก', country: 'สวิตเซอร์แลนด์', timezone: 'Europe/Zurich' },
+      { city: 'เวียนนา', country: 'ออสเตรีย', timezone: 'Europe/Vienna' },
+      { city: 'สต็อกโฮล์ม', country: 'สวีเดน', timezone: 'Europe/Stockholm' },
+      { city: 'ออสโล', country: 'นอร์เวย์', timezone: 'Europe/Oslo' },
+      { city: 'โคเปนเฮเกน', country: 'เดนมาร์ก', timezone: 'Europe/Copenhagen' },
+      { city: 'เอเธนส์', country: 'กรีซ', timezone: 'Europe/Athens' },
+      { city: 'วอร์ซอ', country: 'โปแลนด์', timezone: 'Europe/Warsaw' },
+      { city: 'บูดาเปสต์', country: 'ฮังการี', timezone: 'Europe/Budapest' },
+      { city: 'มอสโก', country: 'รัสเซีย', timezone: 'Europe/Moscow' },
+      { city: 'นิวยอร์ก', country: 'สหรัฐอเมริกา', timezone: 'America/New_York' },
+      { city: 'ชิคาโก', country: 'สหรัฐอเมริกา', timezone: 'America/Chicago' },
+      { city: 'ลอสแอนเจลิส', country: 'สหรัฐอเมริกา', timezone: 'America/Los_Angeles' },
+      { city: 'โทรอนโต', country: 'แคนาดา', timezone: 'America/Toronto' },
+      { city: 'เม็กซิโกซิตี้', country: 'เม็กซิโก', timezone: 'America/Mexico_City' },
+      { city: 'เซาเปาลู', country: 'บราซิล', timezone: 'America/Sao_Paulo' },
+      { city: 'บัวโนสไอเรส', country: 'อาร์เจนตินา', timezone: 'America/Argentina/Buenos_Aires' },
+      { city: 'ซันติอาโก', country: 'ชิลี', timezone: 'America/Santiago' },
+      { city: 'ลิมา', country: 'เปรู', timezone: 'America/Lima' },
+      { city: 'ซิดนีย์', country: 'ออสเตรเลีย', timezone: 'Australia/Sydney' },
+      { city: 'ออกแลนด์', country: 'นิวซีแลนด์', timezone: 'Pacific/Auckland' }
+    ];
+
+    let searchQuery = '';
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      updateClocks();
+    });
+
+    function updateClocks() {
+      const grid = document.getElementById('clockGrid');
+      const now = new Date();
+
+      const filtered = locations.filter(item => 
+        item.city.toLowerCase().includes(searchQuery) ||
+        item.country.toLowerCase().includes(searchQuery) ||
+        item.timezone.toLowerCase().includes(searchQuery)
+      );
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="no-result">ไม่พบข้อมูลเมืองหรือประเทศที่คุณค้นหาค่ะ</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => {
+        const timeString = new Intl.DateTimeFormat('th-TH', {
+          timeZone: item.timezone,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).format(now);
+
+        const dateString = new Intl.DateTimeFormat('th-TH', {
+          timeZone: item.timezone,
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).format(now);
+
+        return `
+          <div class="clock-card">
+            <div class="city-name">${item.city}</div>
+            <div class="country-name">${item.country}</div>
+            <div class="time-display">${timeString}</div>
+            <div class="date-display">${dateString}</div>
+            <span class="timezone-tag">${item.timezone}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    updateClocks();
+    setInterval(updateClocks, 1000);
+
+    // --- PWA Installation Logic ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-flex';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration Failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
